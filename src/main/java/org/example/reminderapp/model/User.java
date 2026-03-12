@@ -15,6 +15,9 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(nullable = false)
+    private String password;
+
     @Column(name = "telegram_chat_id")
     private String telegramChatId;
 
@@ -39,6 +42,14 @@ public class User {
         this.email = email;
     }
 
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public String getTelegramChatId() {
         return telegramChatId;
     }
@@ -54,4 +65,5 @@ public class User {
     public void setReminders(List<Reminder> reminders) {
         this.reminders = reminders;
     }
+
 }
