@@ -19,3 +19,8 @@ spring:
 
 server:
   port: 8080
+
+#  Настройка JWT
+jwt:
+  secret: secretKeyJWTBlablabla1234567890JsonWebTokenSecurityKeyTokenPassword
+  expiration: 86400000

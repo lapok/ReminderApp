@@ -7,6 +7,7 @@ import org.example.reminderapp.dto.UserDto;
 import org.example.reminderapp.model.User;
 import org.example.reminderapp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -19,12 +20,18 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     public UserDto createUser(CreateUserRequest request){
         User user = new User();
 
         user.setEmail(request.getEmail());
+
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        user.setPassword(encodedPassword);
+
         user.setTelegramChatId(request.getTelegramChatId());
-        user.setPassword(request.getPassword());
 
         User savedUser = userRepository.save(user);
 
