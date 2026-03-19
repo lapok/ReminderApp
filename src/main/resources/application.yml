@@ -5,6 +5,7 @@ spring:
     password: reminder_pass
     driver-class-name: org.postgresql.Driver
 
+
   jpa:
     hibernate:
       ddl-auto: validate
@@ -16,6 +17,24 @@ spring:
 
   liquibase:
     change-log: classpath:/db/changelog/changelog-master.yaml
+
+  mail:
+    host: live.smtp.mailtrap.io
+    port: 2525
+    username: api
+    password: 03fc5cd903ba122bfd00f1ca5db295e9
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+    mail.smtp.ssl.trust: live.smtp.mailtrap.io
+
+telegram:
+  bot:
+    token: "8432164181:AAE2RaYRSlYMXL_yx43CtyFTQBfAyaq7YuM"
+    username: "remindersSenderApp_bot"
 
 server:
   port: 8080
