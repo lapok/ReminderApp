@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 3
+      author: user
+      changes:
+        - addColumn:
+            tableName: reminders
+            columns:
+              - column:
+                  name: notified
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false

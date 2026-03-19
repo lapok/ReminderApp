@@ -3,7 +3,6 @@ package org.example.reminderapp.model;
 
 import jakarta.persistence.*;
 
-import java.time.DateTimeException;
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,6 +25,9 @@ public class Reminder {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @Column(nullable = false)
+    private boolean notified = false;
 
     public Reminder(){};
 
@@ -68,4 +70,8 @@ public class Reminder {
     public void setUser(User user) {
         this.user = user;
     }
+
+    public boolean isNotified() { return notified; }
+
+    public void setNotified(boolean notifed) { this.notified = notifed; }
 }
