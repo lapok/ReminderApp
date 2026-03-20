@@ -6,7 +6,6 @@ public class CreateReminderRequest {
     private String title;
     private String description;
     private LocalDateTime remind;
-    private Long userId;
 
     public String getTitle() {
         return title;
@@ -32,11 +31,4 @@ public class CreateReminderRequest {
         this.remind = remind;
     }
 
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
 }
