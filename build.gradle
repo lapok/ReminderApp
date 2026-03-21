@@ -9,8 +9,11 @@ version = '0.0.1-SNAPSHOT'
 description = 'reminder-app'
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
+    if (System.getenv("DOCKER_BUILD") != null) {
+
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
     }
 }
 

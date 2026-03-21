@@ -13,6 +13,28 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reminder_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: reminder-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/reminder_db
+      SPRING_DATASOURCE_USERNAME: reminder_user
+      SPRING_DATASOURCE_PASSWORD: reminder_pass
+      JWT_SECRET: secretKeyJWTBlablabla1234567890JsonWebTokenSecurityKeyTokenPassword
+
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
 
 volumes:
   postgres_data:
