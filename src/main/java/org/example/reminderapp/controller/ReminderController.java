@@ -1,32 +1,31 @@
 package org.example.reminderapp.controller;
 
-import org.example.reminderapp.config.CustomUserDetails;
-import org.example.reminderapp.dto.*;
+import lombok.RequiredArgsConstructor;
+import org.example.reminderapp.model.CustomUserDetails;
+import org.example.reminderapp.dto.ReminderDto;
+import org.example.reminderapp.dto.ReminderListResponse;
 import org.example.reminderapp.service.ReminderService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/reminder")
+@RequiredArgsConstructor
 public class ReminderController {
 
-    @Autowired
-    private ReminderService reminderService;
+    private final ReminderService reminderService;
 
     @PostMapping("/create")
     public ResponseEntity<ReminderDto> createReminder(
-            @RequestBody CreateReminderRequest request,
+            @RequestBody ReminderDto dto,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ){
 //        вызывать сервис, вернуть ответ с кодом 201
-        ReminderDto created = reminderService.createReminder(request, currentUser.getId());
+        ReminderDto created = reminderService.createReminder(dto, currentUser.getId());
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
@@ -36,8 +35,7 @@ public class ReminderController {
             @AuthenticationPrincipal CustomUserDetails currentUser
     ){
 //        вызвать сервис, вернуть ответ с кодом 200
-        ReminderDto currentReminder = reminderService.getReminderById(id, currentUser.getId());
-        return new ResponseEntity<>(currentReminder, HttpStatus.OK);
+        return ResponseEntity.ok(reminderService.getReminderById(id, currentUser.getId()));
     }
 
 //    Заккоментил этот метод, он нам не нужен я думаю
@@ -51,12 +49,12 @@ public class ReminderController {
     @PutMapping("/{id}")
     public ResponseEntity<ReminderDto> updateReminder(
             @PathVariable Long id,
-            @RequestBody UpdateReminderRequest request,
+            @RequestBody ReminderDto dto,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
 
 //        вызвать сервис, вернуть обновленное напоминание
-        ReminderDto updated = reminderService.updateReminder(id, request, currentUser.getId());
+        ReminderDto updated = reminderService.updateReminder(id, dto, currentUser.getId());
         return new ResponseEntity<>(updated, HttpStatus.OK);
     }
 
@@ -78,16 +76,10 @@ public class ReminderController {
             @RequestParam(defaultValue = "asc") String sortDirection,
             @RequestParam(required = false) String filterDate
     ){
-        Long userId = currentUser.getId();
-        Page<ReminderDto> dtoPage = reminderService.getRemindersList(userId, page, size, sortBy, sortDirection, filterDate);
 
-        ReminderListResponse response = new ReminderListResponse();
-        response.setContent(dtoPage.getContent());
-        response.setPage(dtoPage.getNumber());
-        response.setSize(dtoPage.getSize());
-        response.setTotalElements(dtoPage.getTotalElements());
-        response.setTotalPages(dtoPage.getTotalPages());
-        response.setLast(dtoPage.isLast());
+        ReminderListResponse response = reminderService.getRemindersList(
+                currentUser.getId(), page, size, sortBy, sortDirection, filterDate
+        );
 
         return ResponseEntity.ok(response);
     }

@@ -5,16 +5,16 @@ services:
     image: postgres:15-alpine
     container_name: reminder-postgres
     environment:
-      POSTGRES_DB: reminder_db
-      POSTGRES_USER: reminder_user
-      POSTGRES_PASSWORD: reminder_pass
+      POSTGRES_DB: ${DB_NAME:-reminder_db}
+      POSTGRES_USER: ${DB_USERNAME:-reminder_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-reminder_pass}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U reminder_user"]
+      test: ["CMD-SHELL", "pg_isready -U reminder_user -d reminder_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,10 +26,12 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/reminder_db
-      SPRING_DATASOURCE_USERNAME: reminder_user
-      SPRING_DATASOURCE_PASSWORD: reminder_pass
-      JWT_SECRET: secretKeyJWTBlablabla1234567890JsonWebTokenSecurityKeyTokenPassword
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-reminder_db}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-reminder_user}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-reminder_pass}
+      JWT_SECRET: ${JWT_SECRET}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
 
     ports:
       - "8080:8080"

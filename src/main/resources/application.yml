@@ -1,14 +1,14 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/reminder_db
-    username: reminder_user
-    password: reminder_pass
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/reminder_db}
+    username: ${DB_USERNAME:reminder_user}
+    password: ${DB_PASSWORD:reminder_pass}
     driver-class-name: org.postgresql.Driver
 
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
@@ -19,10 +19,10 @@ spring:
     change-log: classpath:/db/changelog/changelog-master.yaml
 
   mail:
-    host: live.smtp.mailtrap.io
-    port: 2525
-    username: api
-    password: 03fc5cd903ba122bfd00f1ca5db295e9
+    host: ${MAIL_HOST:live.smtp.mailtrap.io}
+    port: ${MAIL_PORT:2525}
+    username: ${MAIL_USERNAME:api}
+    password: ${MAIL_PASSWORD:03fc5cd903ba122bfd00f1ca5db295e9}
     properties:
       mail:
         smtp:
@@ -33,13 +33,13 @@ spring:
 
 telegram:
   bot:
-    token: "8432164181:AAE2RaYRSlYMXL_yx43CtyFTQBfAyaq7YuM"
-    username: "remindersSenderApp_bot"
+    token: ${TELEGRAM_BOT_TOKEN:default_test_token}
+    username: ${TELEGRAM_BOT_NAME:remindersSenderApp_bot}
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 #  Настройка JWT
 jwt:
-  secret: secretKeyJWTBlablabla1234567890JsonWebTokenSecurityKeyTokenPassword
-  expiration: 86400000
+  secret: ${JWT_SECRET:secretKeyJWTBlablabla1234567890JsonWebTokenSecurityKeyTokenPassword}
+  expiration: ${JWT_EXPIRATION:86400000}

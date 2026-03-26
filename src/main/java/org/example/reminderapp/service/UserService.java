@@ -1,115 +1,71 @@
 package org.example.reminderapp.service;
 
-import org.example.reminderapp.dto.CreateUserRequest;
-import org.example.reminderapp.dto.ReminderDto;
-import org.example.reminderapp.dto.UpdateUserRequest;
+import lombok.RequiredArgsConstructor;
 import org.example.reminderapp.dto.UserDto;
+import org.example.reminderapp.mapper.UserMapper;
 import org.example.reminderapp.model.User;
 import org.example.reminderapp.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
 
-    public UserDto createUser(CreateUserRequest request){
-        User user = new User();
+    @Transactional
+    public UserDto createUser(UserDto dto){
+        User user = userMapper.toEntity(dto);
 
-        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
 
-        String encodedPassword = passwordEncoder.encode(request.getPassword());
-        user.setPassword(encodedPassword);
-
-        user.setTelegramChatId(request.getTelegramChatId());
-
-        User savedUser = userRepository.save(user);
-
-        UserDto dto = new UserDto();
-        dto.setId(savedUser.getId());
-        dto.setEmail(savedUser.getEmail());
-        dto.setTelegramChatId(savedUser.getTelegramChatId());
-
-        return dto;
+        return userMapper.toDto(userRepository.save(user));
     }
 
     public UserDto getUserById(Long id){
-        Optional<User> optionalUser = userRepository.findById(id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-        if (optionalUser.isPresent()){
-            User user = optionalUser.get();
-
-            UserDto dto = new UserDto();
-            dto.setId(user.getId());
-            dto.setEmail(user.getEmail());
-            dto.setTelegramChatId(user.getTelegramChatId());
-
-            return dto;
-        } else {
-            throw new RuntimeException("Пользователь с id " + id + " не найден");
-        }
+        return userMapper.toDto(user);
     }
 
     public List<UserDto> getAllUsers(){
-        List<User> users = userRepository.findAll();
-
-        List<UserDto> userDtos = new ArrayList<>();
-
-        for (User user: users){
-            UserDto dto = new UserDto();
-            dto.setId(user.getId());
-            dto.setEmail(user.getEmail());
-            dto.setTelegramChatId(user.getTelegramChatId());
-
-            userDtos.add(dto);
-        }
-
-        return userDtos;
+        return userRepository.findAll().stream()
+                .map(userMapper::toDto)
+                .toList();
     }
 
-    public UserDto updateUser(Long id, UpdateUserRequest request){
-        Optional<User> optionalUser = userRepository.findById(id);
+    @Transactional
+    public UserDto updateUser(Long id, UserDto dto){
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-        if (optionalUser.isPresent()){
-//      проверяем опциональные поля (request == null) - поле не изменится
-
-            User user = optionalUser.get();
-
-
-            if (request.getEmail() != null){
-                user.setEmail(request.getEmail());
+            if (dto.getEmail() != null){
+                user.setEmail(dto.getEmail());
             }
-            if (request.getTelegramChatId() != null){
-                user.setTelegramChatId(request.getTelegramChatId());
+            if (dto.getTelegramChatId() != null){
+                user.setTelegramChatId(dto.getTelegramChatId());
             }
 
-            User updatedUser = userRepository.save(user);
+            return userMapper.toDto(userRepository.save(user));
 
-            UserDto dto = new UserDto();
-            dto.setEmail(updatedUser.getEmail());
-            dto.setTelegramChatId(updatedUser.getTelegramChatId());
 
-            return dto;
-        } else throw new RuntimeException("Пользователь с таким id " + id + " не найден");
     }
 
+    @Transactional
     public void deleteUser(Long id){
-        Optional<User> optionalUser = userRepository.findById(id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-        if (optionalUser.isPresent()){
-            User user = optionalUser.get();
-            userRepository.delete(user);
-        } else throw new RuntimeException("Пользователя с таким id " + id + " не найдено");
+        userRepository.delete(user);
     }
 
 

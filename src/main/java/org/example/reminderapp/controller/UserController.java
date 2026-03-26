@@ -1,10 +1,8 @@
 package org.example.reminderapp.controller;
 
-import org.example.reminderapp.dto.CreateUserRequest;
-import org.example.reminderapp.dto.UpdateUserRequest;
+import lombok.RequiredArgsConstructor;
 import org.example.reminderapp.dto.UserDto;
 import org.example.reminderapp.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,14 +11,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/user")
+@RequiredArgsConstructor
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
     @PostMapping("/create")
-    public ResponseEntity<UserDto> createUser(@RequestBody CreateUserRequest request){
-        UserDto created = userService.createUser(request);
+    public ResponseEntity<UserDto> createUser(@RequestBody UserDto dto){
+        UserDto created = userService.createUser(dto);
 
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
@@ -41,9 +39,9 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserDto> updateUser(
             @PathVariable Long id,
-            @RequestBody UpdateUserRequest request){
+            @RequestBody UserDto dto){
 
-        UserDto updated = userService.updateUser(id, request);
+        UserDto updated = userService.updateUser(id, dto);
         return new ResponseEntity<>(updated, HttpStatus.OK);
     }
 

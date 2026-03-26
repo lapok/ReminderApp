@@ -1,60 +1,52 @@
 package org.example.reminderapp.service;
 
-import org.example.reminderapp.dto.CreateReminderRequest;
+import lombok.RequiredArgsConstructor;
 import org.example.reminderapp.dto.ReminderDto;
 import org.example.reminderapp.dto.ReminderListResponse;
-import org.example.reminderapp.dto.UpdateReminderRequest;
+import org.example.reminderapp.mapper.ReminderMapper;
 import org.example.reminderapp.model.Reminder;
 import org.example.reminderapp.model.User;
 import org.example.reminderapp.repository.ReminderRepository;
 import org.example.reminderapp.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ReminderService {
 
-    @Autowired
-    private ReminderRepository reminderRepository;
-    @Autowired
-    private UserRepository userRepository;
+    private final ReminderRepository reminderRepository;
+    private final UserRepository userRepository;
+    private final ReminderMapper reminderMapper;
 
-    public ReminderDto createReminder(CreateReminderRequest request, Long userId){
+    @Transactional
+    public ReminderDto createReminder(ReminderDto dto, Long userId){
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-        Reminder reminder = new Reminder();
+        Reminder reminder = reminderMapper.toEntity(dto);
 
-        reminder.setTitle(request.getTitle());
-        reminder.setDescription(request.getDescription());
-        reminder.setRemind(request.getRemind());
         reminder.setUser(user);
+        // Scheduler проверяет напоминания раз в минуту (cron с фиксированной секундой),
+        // поэтому нормализуем время до границы минуты, чтобы не промахиваться из-за seconds/nanos.
+        if (reminder.getRemind() != null) {
+            reminder.setRemind(reminder.getRemind().withSecond(0).withNano(0));
+        }
 
-        Reminder savedReminder = reminderRepository.save(reminder);
-
-        ReminderDto dto = new ReminderDto();
-
-        dto.setId(savedReminder.getId());
-        dto.setTitle(savedReminder.getTitle());
-        dto.setDescription(savedReminder.getDescription());
-        dto.setRemind(savedReminder.getRemind());
-        dto.setUserId(savedReminder.getUser().getId());
-
-        return dto;
+        return reminderMapper.toDto(reminderRepository.save(reminder));
     }
 
+    @Transactional(readOnly = true)
     public ReminderDto getReminderById(Long id, Long userId){
         Reminder reminder = reminderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Напоминание не найдено"));
@@ -63,18 +55,11 @@ public class ReminderService {
             throw new RuntimeException("У вас нет доступа к этому напоминанию");
         }
 
-            ReminderDto dto = new ReminderDto();
-
-            dto.setId(reminder.getId());
-            dto.setTitle(reminder.getTitle());
-            dto.setDescription(reminder.getDescription());
-            dto.setRemind(reminder.getRemind());
-            dto.setUserId(reminder.getUser().getId());
-
-            return dto;
+        return reminderMapper.toDto(reminder);
     }
 
-    public ReminderDto updateReminder(Long id, UpdateReminderRequest request, Long userId){
+    @Transactional
+    public ReminderDto updateReminder(Long id, ReminderDto dto, Long userId){
         Reminder reminder = reminderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Напоминание с id " + id + " не найдено"));
 
@@ -84,50 +69,33 @@ public class ReminderService {
 
 
 //          Будем проверять поля опционально (request == null) - запись не перезаписывается
-            if (request.getTitle() != null){
-            reminder.setTitle(request.getTitle());
+            if (dto.getTitle() != null){
+            reminder.setTitle(dto.getTitle());
             }
 
-            if (request.getDescription() != null){
-            reminder.setDescription(request.getDescription());
+            if (dto.getDescription() != null){
+            reminder.setDescription(dto.getDescription());
             }
 
-            if (request.getRemind() != null){
-            reminder.setRemind(request.getRemind());
+            if (dto.getRemind() != null){
+            // Аналогично createReminder: приводим к границе минуты.
+            reminder.setRemind(dto.getRemind().withSecond(0).withNano(0));
             }
 
-            Reminder updatedReminder = reminderRepository.save(reminder);
-
-            ReminderDto dto = new ReminderDto();
-
-            dto.setId(updatedReminder.getId());
-            dto.setTitle(updatedReminder.getTitle());
-            dto.setDescription(updatedReminder.getDescription());
-            dto.setRemind(updatedReminder.getRemind());
-
-            return dto;
+            return reminderMapper.toDto(reminderRepository.save(reminder));
     }
 
+    @Transactional(readOnly = true)
     public List<ReminderDto> getRemindersByUserId(Long userId){
         userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Пользователь с id " + userId + " не найден"));
 
-        List<Reminder> reminders = reminderRepository.findByUserId(userId);
-
-        List<ReminderDto> remindersDtos = new ArrayList<>();
-        for (Reminder reminder : reminders){
-            ReminderDto dto = new ReminderDto();
-            dto.setId(reminder.getId());
-            dto.setTitle(reminder.getTitle());
-            dto.setDescription(reminder.getDescription());
-            dto.setRemind(reminder.getRemind());
-            dto.setUserId(reminder.getUser().getId());
-            remindersDtos.add(dto);
-        }
-
-        return remindersDtos;
+        return reminderRepository.findByUserId(userId).stream()
+                .map(reminderMapper::toDto)
+                .toList();
     }
 
+    @Transactional
     public void deleteReminder(Long id, Long userId){
         Reminder reminder = reminderRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("Напоминалка с таким id " + id + " не найдена или уже не существует."));
@@ -138,14 +106,15 @@ public class ReminderService {
         reminderRepository.delete(reminder);
     }
 
-    public Page<ReminderDto> getRemindersList(Long userId, int page, int size, String sortBy, String sortDirection, String filterDate){
+    @Transactional(readOnly = true)
+    public ReminderListResponse getRemindersList(Long userId, int page, int size, String sortBy, String sortDirection, String filterDate){
         Sort sort = sortDirection.equalsIgnoreCase("desc")
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
-
         Page<Reminder> reminderPage;
+
         if (filterDate != null && !filterDate.isEmpty()){
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             LocalDate date = LocalDate.parse(filterDate, formatter);
@@ -158,54 +127,33 @@ public class ReminderService {
             reminderPage = reminderRepository.findByUserId(userId, pageable);
         }
 
-        Page<ReminderDto> dtoPage = reminderPage.map(reminder -> {
-            ReminderDto dto = new ReminderDto();
-            dto.setId(reminder.getId());
-            dto.setTitle(reminder.getTitle());
-            dto.setDescription(reminder.getDescription());
-            dto.setRemind(reminder.getRemind());
-            dto.setUserId(reminder.getUser().getId());
-            return dto;
-        });
-        return dtoPage;
+        return ReminderListResponse.builder()
+                .content(reminderPage.getContent().stream()
+                        .map(reminderMapper::toDto)
+                        .toList())
+                .page(reminderPage.getNumber())
+                .size(reminderPage.getSize())
+                .totalElements(reminderPage.getTotalElements())
+                .totalPages(reminderPage.getTotalPages())
+                .last(reminderPage.isLast())
+                .build();
     }
 
+    @Transactional(readOnly = true)
     public List<ReminderDto> sortReminders(Long userId, String by){
 //      Определяем поле для сортировки
-        String sortField;
-        switch(by){
-            case "name":
-                sortField = "title";
-                break;
-            case "date":
-                sortField = "remind";
-                break;
-            case "time":
-                sortField = "remind";
-                break;
-            default:
-                throw new RuntimeException("Неверный параметр сортировки. Используйте: name, date, time");
-        }
+        String sortField = switch (by) {
+            case "name" -> "title";
+            case "date", "time" -> "remind";
+            default -> throw new RuntimeException("Неверный параметр сортировки");
+        };
 
-        Sort sort = Sort.by(sortField).ascending();
-
-        List<Reminder> reminders = reminderRepository.findByUserId(userId, sort);
-
-
-        List<ReminderDto> dtos = new ArrayList<>();
-        for(Reminder reminder: reminders){
-            ReminderDto dto = new ReminderDto();
-            dto.setId(reminder.getId());
-            dto.setTitle(reminder.getTitle());
-            dto.setDescription(reminder.getDescription());
-            dto.setRemind(reminder.getRemind());
-            dto.setUserId(reminder.getUser().getId());
-            dtos.add(dto);
-        }
-
-        return dtos;
+        return reminderRepository.findByUserId(userId, Sort.by(sortField).ascending()).stream()
+                .map(reminderMapper::toDto)
+                .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<ReminderDto> filterReminders(Long userId, String date, String time){
         List<Reminder> reminders;
 
@@ -238,17 +186,9 @@ public class ReminderService {
             reminders = reminderRepository.findByUserId(userId);
         }
 
-        List<ReminderDto> dtos = new ArrayList<>();
-        for (Reminder reminder: reminders) {
-            ReminderDto dto = new ReminderDto();
-            dto.setId(reminder.getId());
-            dto.setTitle(reminder.getTitle());
-            dto.setDescription(reminder.getDescription());
-            dto.setRemind(reminder.getRemind());
-            dto.setUserId(reminder.getUser().getId());
-            dtos.add(dto);
-        }
-        return dtos;
+        return reminders.stream()
+                .map(reminderMapper::toDto)
+                .toList();
     }
 
 }
