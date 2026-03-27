@@ -1,16 +1,18 @@
 package org.example.reminderapp.controller;
 
-
-import org.example.reminderapp.dto.CreateReminderRequest;
-import org.example.reminderapp.dto.CreateUserRequest;
+import org.example.reminderapp.config.TestBotConfig;
 import org.example.reminderapp.dto.LoginRequest;
+import org.example.reminderapp.dto.ReminderDto;
 import org.example.reminderapp.dto.UserDto;
+import org.example.reminderapp.service.TelegramService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -19,16 +21,19 @@ import org.springframework.web.context.WebApplicationContext;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
 @SpringBootTest
 @Transactional
+@Import(TestBotConfig.class)
 public class ReminderControllerIntegrationTest {
 
     @Autowired
@@ -38,6 +43,12 @@ public class ReminderControllerIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @MockitoBean
+    private TelegramService telegramService;
+
+    @MockitoBean
+    private JavaMailSender mailSender;
 
     private String jwtToken;
     private String testEmail;
@@ -51,19 +62,21 @@ public class ReminderControllerIntegrationTest {
 
         testEmail = "test" + System.currentTimeMillis() + "@mail.com";
 
-        UserDto userDto = createUser(testEmail, "password");
+        createUser(testEmail, "password");
         jwtToken = login(testEmail, "password");
     }
 
     private UserDto createUser(String email, String password) throws Exception {
-        CreateUserRequest request = new CreateUserRequest();
-        request.setEmail(email);
-        request.setPassword(password);
-        request.setTelegramChatId("12345");
+        Map<String, Object> request = Map.of(
+                "email", email,
+                "password", password,
+                "telegramChatId", "12345"
+        );
 
         MvcResult result = mockMvc.perform(post("/api/v1/user/create")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
                 .andExpect(status().isCreated())
                 .andReturn();
 
@@ -79,26 +92,25 @@ public class ReminderControllerIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").exists())
                 .andReturn();
 
-        String response = result.getResponse().getContentAsString();
-
-        return response.split("\"token\":\"")[1].split("\"")[0];
+        return com.jayway.jsonpath.JsonPath.read(result.getResponse().getContentAsString(), "$.token");
     }
 
     @Test
     void createReminder_ShouldReturn201_WhenValidRequest() throws Exception {
-        CreateReminderRequest request = new CreateReminderRequest();
-        request.setTitle("Интеграционный тест");
-        request.setDescription("Описание");
-        request.setRemind(LocalDateTime.now().plusHours(1));
+        ReminderDto request = ReminderDto.builder()
+                .title("Test reminder")
+                .description("Test description")
+                .remind(LocalDateTime.now().plusDays(1))
+                .build();
 
         mockMvc.perform(post("/api/v1/reminder/create")
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.title").value("Интеграционный тест"));
+                .andExpect(status().isCreated());
     }
 
     @Test

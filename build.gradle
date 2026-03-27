@@ -9,8 +9,11 @@ version = '0.0.1-SNAPSHOT'
 description = 'reminder-app'
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
+    if (System.getenv("DOCKER_BUILD") != null) {
+
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
     }
 }
 
@@ -27,6 +30,15 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-security-oauth2-client'
     implementation 'org.springframework.boot:spring-boot-starter-security-oauth2-resource-server'
+
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // Mapstruct
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
     // JWT
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'

@@ -1,6 +1,7 @@
 package org.example.reminderapp.config;
 
 import jakarta.servlet.Filter;
+import lombok.RequiredArgsConstructor;
 import org.example.reminderapp.security.AuthTokenFilter;
 import org.example.reminderapp.security.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,13 +19,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Autowired
-    private CustomUserDetailsService userDetailsService;
-
-    @Autowired
-    private AuthTokenFilter authTokenFilter;
+    private final CustomUserDetailsService userDetailsService;
+    private final AuthTokenFilter authTokenFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder(){

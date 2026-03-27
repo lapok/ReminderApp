@@ -1,7 +1,7 @@
 package org.example.reminderapp.security;
 
 import io.jsonwebtoken.*;
-import org.example.reminderapp.config.CustomUserDetails;
+import org.example.reminderapp.model.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;

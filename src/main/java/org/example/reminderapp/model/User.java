@@ -2,68 +2,33 @@ package org.example.reminderapp.model;
 
 import java.util.List;
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.util.ArrayList;
 
 @Entity
 @Table(name = "users")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "email", unique = true, nullable = false)
     private String email;
 
-    @Column(nullable = false)
+    @Column(name ="password", nullable = false)
     private String password;
 
     @Column(name = "telegram_chat_id")
     private String telegramChatId;
 
     @OneToMany(mappedBy = "user")
+    @ToString.Exclude
     private List<Reminder> reminders = new ArrayList<>();
-
-    public User(){}
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getTelegramChatId() {
-        return telegramChatId;
-    }
-
-    public void setTelegramChatId(String telegramChatId) {
-        this.telegramChatId = telegramChatId;
-    }
-
-    public List<Reminder> getReminders() {
-        return reminders;
-    }
-
-    public void setReminders(List<Reminder> reminders) {
-        this.reminders = reminders;
-    }
 
 }

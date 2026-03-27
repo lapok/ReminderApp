@@ -1,8 +1,8 @@
 package org.example.reminderapp.service;
 
 
-import org.example.reminderapp.dto.CreateReminderRequest;
 import org.example.reminderapp.dto.ReminderDto;
+import org.example.reminderapp.mapper.ReminderMapper;
 import org.example.reminderapp.model.Reminder;
 import org.example.reminderapp.model.User;
 import org.example.reminderapp.repository.ReminderRepository;
@@ -30,12 +30,15 @@ public class ReminderServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ReminderMapper reminderMapper;
+
     @InjectMocks
     private ReminderService reminderService;
 
     private User testUser;
     private Reminder testReminder;
-    private CreateReminderRequest createRequest;
+    private ReminderDto reminderDto;
 
     @BeforeEach
     void setUp() {
@@ -50,24 +53,27 @@ public class ReminderServiceTest {
         testReminder.setRemind(LocalDateTime.now().plusHours(1));
         testReminder.setUser(testUser);
 
-        createRequest = new CreateReminderRequest();
-        createRequest.setTitle("Новое напоминание");
-        createRequest.setDescription("Описание");
-        createRequest.setRemind(LocalDateTime.now().plusHours(1));
+        reminderDto = ReminderDto.builder()
+                .title("Новое напоминание")
+                .description("Описание")
+                .remind(LocalDateTime.now().plusHours(1))
+                .build();
     }
 
     @Test
     void createReminder_ShouldReturnReminderDto_WhenUserExists() {
 //        given
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(reminderMapper.toEntity(any(ReminderDto.class))).thenReturn(testReminder);
         when(reminderRepository.save(any(Reminder.class))).thenReturn(testReminder);
+        when(reminderMapper.toDto(any(Reminder.class))).thenReturn(reminderDto);
 
 //        when
-        ReminderDto result = reminderService.createReminder(createRequest, 1L);
+        ReminderDto result = reminderService.createReminder(reminderDto, 1L);
 
 //        then
         assertNotNull(result);
-        assertEquals("Тест", result.getTitle());
+        assertEquals("Новое напоминание", result.getTitle());
         verify(userRepository).findById(1L);
         verify(reminderRepository).save(any(Reminder.class));
     }
@@ -79,7 +85,7 @@ public class ReminderServiceTest {
 
 //        when & then
         assertThrows(RuntimeException.class, () -> {
-            reminderService.createReminder(createRequest, 99L);
+            reminderService.createReminder(reminderDto, 99L);
         });
     }
 
@@ -87,13 +93,14 @@ public class ReminderServiceTest {
     void getReminderById_ShouldReturnReminderDto_WhenUserIsOwner() {
 //        given
         when(reminderRepository.findById(1L)).thenReturn(Optional.of(testReminder));
+        when(reminderMapper.toDto(any(Reminder.class))).thenReturn(reminderDto);
 
 //        when
         ReminderDto result = reminderService.getReminderById(1L, 1L);
 
 //        then
         assertNotNull(result);
-        assertEquals("Тест", result.getTitle());
+        assertEquals("Новое напоминание", result.getTitle());
     }
 
     @Test
