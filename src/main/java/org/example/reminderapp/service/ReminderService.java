@@ -25,6 +25,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReminderService {
 
+    private static final String SORT_BY_NAME = "name";
+    private static final String SORT_BY_DATE = "date";
+    private static final String SORT_BY_TIME = "time";
+
+    private static final String ENTITY_FIELD_TITLE = "title";
+    private static final String ENTITY_FIELD_REMIND = "remind";
+
+
     private final ReminderRepository reminderRepository;
     private final UserRepository userRepository;
     private final ReminderMapper reminderMapper;
@@ -143,8 +151,8 @@ public class ReminderService {
     public List<ReminderDto> sortReminders(Long userId, String by){
 //      Определяем поле для сортировки
         String sortField = switch (by) {
-            case "name" -> "title";
-            case "date", "time" -> "remind";
+            case SORT_BY_NAME -> ENTITY_FIELD_TITLE;
+            case SORT_BY_DATE, SORT_BY_TIME -> ENTITY_FIELD_REMIND;
             default -> throw new RuntimeException("Неверный параметр сортировки");
         };
 
