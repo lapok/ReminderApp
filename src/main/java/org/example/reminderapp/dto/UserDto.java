@@ -18,6 +18,6 @@ public class UserDto {
     private String telegramChatId;
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private String password;
+    private CharSequence password;
 
 }

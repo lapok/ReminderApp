@@ -10,10 +10,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class AuthResponse {
+
+    private static final String DEFAULT_TOKEN_TYPE = "Bearer";
+
     private String token;
 
     @Builder.Default
-    private String type = "Bearer";
+    private String type = DEFAULT_TOKEN_TYPE;
 
     private Long id;
     private String email;
@@ -22,7 +25,7 @@ public class AuthResponse {
         this.token = token;
         this.id = id;
         this.email = email;
-        this.type = "Bearer";
+        this.type = DEFAULT_TOKEN_TYPE;
     }
 
 }
