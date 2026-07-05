@@ -18,7 +18,7 @@ public class NotificationScheduler {
 
     private final NotificationService notificationService;
 
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "${app.scheduling.notification-cron}")
     public void scheduleNotificationCheck() {
         log.info("Scheduler: проверка напоминаний в {}", LocalDateTime.now());
         notificationService.checkAndSendNotifications();
